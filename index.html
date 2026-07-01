@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monthly Portfolio Allocator — Version C (recommended list)</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#111726; --panel2:#0d1320;
+    --line:#1e2942; --text:#e8edf7; --muted:#8a98b5;
+    --blue:#4a9eff; --green:#28c840; --amber:#febc2e; --red:#ff5f57;
+    --tech:#4a9eff; --def:#28c840; --idx:#febc2e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    line-height:1.5; padding:32px 16px;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:-.3px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+  .mono{font-family:'Courier New',ui-monospace,monospace}
+  .tabs{display:flex;gap:8px;margin-bottom:20px}
+  .tab{padding:8px 16px;border-radius:8px;background:var(--panel);border:1px solid var(--line);
+    font-size:13px;cursor:pointer;color:var(--text)}
+  .tab.active{border-color:var(--blue);color:var(--blue)}
+  .tab.disabled{opacity:.4;cursor:not-allowed}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+  .inputrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  label{font-size:13px;color:var(--muted)}
+  .amt{display:flex;align-items:center;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:6px 12px}
+  .amt span{color:var(--muted);font-size:18px;margin-right:4px}
+  input[type=number]{background:transparent;border:none;color:var(--text);font-size:20px;
+    width:130px;outline:none;font-family:'Courier New',monospace}
+  .presets{display:flex;gap:6px}
+  .preset{padding:6px 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);
+    font-size:12px;cursor:pointer;color:var(--muted)}
+  .preset:hover{border-color:var(--blue);color:var(--blue)}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+    padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:11px 10px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .tk{font-weight:700;font-family:'Courier New',monospace}
+  .rank{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;
+    background:var(--panel2);border:1px solid var(--line);font-size:10px;color:var(--muted);margin-right:6px}
+  .nm{color:var(--muted);font-size:12px}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .d-tech{background:var(--tech)} .d-def{background:var(--def)} .d-idx{background:var(--idx)}
+  .dollar{font-family:'Courier New',monospace;font-weight:700;font-size:15px}
+  .pct{color:var(--muted);font-size:12px}
+  .shares{font-family:'Courier New',monospace;color:var(--muted);font-size:13px}
+  .totalrow td{border-top:2px solid var(--line);font-weight:700;padding-top:14px}
+  .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:18px 0 10px}
+  .bar div{height:100%}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .legend b{color:var(--text)}
+  .sectors{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+  .sbox{flex:1;min-width:140px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .sbox .lab{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .sbox .val{font-family:'Courier New',monospace;font-size:20px;font-weight:700;margin-top:2px}
+  .note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6}
+  .foot{font-size:11px;color:var(--muted);text-align:center;margin-top:24px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Monthly Portfolio Allocator</h1>
+  <div class="sub">Version C · recommended list · 6 positions · 40 / 40 / 20 · ranked by conviction</div>
+
+  <div class="tabs">
+    <div class="tab active">Allocation</div>
+    <div class="tab disabled" title="Add an Anthropic API key to enable">AI Picks (disabled)</div>
+  </div>
+
+  <div class="card">
+    <div class="inputrow">
+      <label>Monthly investment</label>
+      <div class="amt"><span>$</span><input id="amt" type="number" min="0" step="10" value="1000" /></div>
+      <div class="presets">
+        <div class="preset" data-v="500">$500</div>
+        <div class="preset" data-v="1000">$1,000</div>
+        <div class="preset" data-v="1500">$1,500</div>
+        <div class="preset" data-v="2000">$2,000</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>#  Holding</th><th>Sector</th><th>Target %</th><th>Amount</th><th>~Shares</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+      <tfoot>
+        <tr class="totalrow"><td>TOTAL</td><td></td><td id="tpct">100%</td><td id="ttot" class="dollar"></td><td></td></tr>
+      </tfoot>
+    </table>
+
+    <div class="bar" id="bar"></div>
+    <div class="legend">
+      <span><span class="dot d-tech"></span><b>AI / Tech 40%</b> — NVDA · AVGO · MU</span>
+      <span><span class="dot d-def"></span><b>Defensive 40%</b> — WMT · LLY</span>
+      <span><span class="dot d-idx"></span><b>Index 20%</b> — SWPPX</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sectors" id="sectors"></div>
+    <div class="note" id="note"></div>
+  </div>
+
+  <div class="foot">
+    Prices approximate as of Jun 24, 2026 and used only to estimate share counts — Schwab fractional shares handle the remainder.<br>
+    Informational only · not financial advice · dollar-cost average the same amount each month.
+  </div>
+</div>
+
+<script>
+  // ---- Version C: recommended list, ranked by conviction (40 / 40 / 20) ----
+  const HOLDINGS = [
+    {rank:1, ticker:'NVDA',  name:'Nvidia',               sector:'AI / Tech', cls:'tech', pct:17, price:198.00,  target:'$298'},
+    {rank:2, ticker:'AVGO',  name:'Broadcom',             sector:'AI / Tech', cls:'tech', pct:12, price:382.00,  target:'$524'},
+    {rank:3, ticker:'SWPPX', name:'Schwab S&P 500 Index', sector:'Index',     cls:'idx',  pct:20, price:20.00,   target:'—'},
+    {rank:4, ticker:'WMT',   name:'Walmart',              sector:'Defensive', cls:'def',  pct:22, price:120.00,  target:'$138'},
+    {rank:5, ticker:'MU',    name:'Micron Technology',    sector:'AI / Tech', cls:'tech', pct:11, price:1048.00, target:'$1,250'},
+    {rank:6, ticker:'LLY',   name:'Eli Lilly',            sector:'Defensive', cls:'def',  pct:18, price:1200.00, target:'$1,219'},
+  ];
+  const COLORS = {tech:'#4a9eff', def:'#28c840', idx:'#febc2e'};
+
+  // Round each position to nearest $10, then adjust the largest so the total is exact.
+  function allocate(amount){
+    const raw = HOLDINGS.map(h => amount * h.pct / 100);
+    const rounded = raw.map(r => Math.round(r/10)*10);
+    let diff = amount - rounded.reduce((a,b)=>a+b,0);
+    let idx = rounded.indexOf(Math.max(...rounded));
+    rounded[idx] += diff;
+    return rounded;
+  }
+
+  function fmt(n){ return '$' + Number(n).toLocaleString('en-US'); }
+
+  function render(){
+    const amount = Math.max(0, Number(document.getElementById('amt').value) || 0);
+    const alloc = allocate(amount);
+
+    const rows = HOLDINGS.map((h,i)=>{
+      const $ = alloc[i];
+      const sh = h.price ? ($/h.price).toFixed($>0 && $/h.price < 1 ? 3 : 2) : '—';
+      return `<tr>
+        <td><span class="rank">${h.rank}</span><span class="dot d-${h.cls}"></span><span class="tk">${h.ticker}</span> <span class="nm">${h.name}</span></td>
+        <td class="nm">${h.sector}</td>
+        <td class="pct">${h.pct}%</td>
+        <td class="dollar">${fmt($)}</td>
+        <td class="shares">${sh}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('rows').innerHTML = rows;
+    document.getElementById('ttot').textContent = fmt(alloc.reduce((a,b)=>a+b,0));
+
+    document.getElementById('bar').innerHTML = HOLDINGS.map(h =>
+      `<div style="width:${h.pct}%;background:${COLORS[h.cls]}"></div>`).join('');
+
+    const sec = {'AI / Tech':0,'Defensive':0,'Index':0};
+    HOLDINGS.forEach((h,i)=> sec[h.sector]+=alloc[i]);
+    const total = alloc.reduce((a,b)=>a+b,0) || 1;
+    const sboxes = [['AI / Tech','tech'],['Defensive','def'],['Index','idx']].map(([s,c])=>`
+      <div class="sbox">
+        <div class="lab"><span class="dot d-${c}"></span>${s}</div>
+        <div class="val">${fmt(sec[s])}</div>
+        <div class="pct">${Math.round(sec[s]/total*100)}% of total</div>
+      </div>`).join('');
+    document.getElementById('sectors').innerHTML = sboxes;
+
+    document.getElementById('note').innerHTML =
+      `<b>Version C — recommended list.</b> Ranked by conviction: NVDA, AVGO, SWPPX, WMT, MU, LLY. ` +
+      `XOM and NVO are dropped; LLY is the healthcare pick. Note the defensive sleeve is now consumer (WMT) + ` +
+      `healthcare (LLY) only — no energy hedge — so it carries more single-sector risk than the prior split. ` +
+      `Amounts round to the nearest $10 and always sum to your exact monthly figure.`;
+  }
+
+  document.getElementById('amt').addEventListener('input', render);
+  document.querySelectorAll('.preset').forEach(p =>
+    p.addEventListener('click', ()=>{ document.getElementById('amt').value = p.dataset.v; render(); }));
+  render();
+</script>
+</body>
+</html>
